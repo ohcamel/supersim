@@ -230,4 +230,10 @@ std::queue<Application::TraceOp>* Application::getTraceQ(u32 pe) {
   assert(pe < numPEs_);
   return &traceRequests_[pe];
 }
+
+const std::queue<Application::TraceOp>* Application::getTraceQ(u32 pe) const {
+  assert(pe < numPEs_);
+  return &traceRequests_[pe];
+}
+
 }  // namespace Ntrace

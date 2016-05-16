@@ -58,6 +58,7 @@ class Application : public ::Application {
     u32 size;  // Size in bits
   };
   std::queue<TraceOp> * getTraceQ(u32 pe);
+  const std::queue<TraceOp> * getTraceQ(u32 pe) const;
 
  private:
   u32 numVcs_;

@@ -33,7 +33,8 @@ ProcessorTerminal::ProcessorTerminal(
     : ::Terminal(_name, _parent, _id, _address, _app) {
   latency_ = _settings["latency"].asUInt();
   assert(latency_ > 0);
-  Application* app = reinterpret_cast<Application*>(gSim->getApplication());
+  const Application* app = dynamic_cast<const Application*>(_parent);
+  assert(app);
   assert(_id >= app->numSrams());
   PeId = _id - app->numSrams();
   assert(PeId < app->numPEs());

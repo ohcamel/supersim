@@ -1,0 +1,112 @@
+{
+  "simulator": {
+    "cycle_time": 1000,  // picoseconds
+    "print_progress": true,
+    "print_interval": 1.0,  // seconds
+    "random_seed": 12345678
+  },
+  "network": {
+    "topology": "torus",
+    "num_vcs": 2,
+    "dimensions": [5, 4],
+    "concentration": 1,
+    "internal_channel": {
+      "latency": 1  // cycles
+    },
+    "external_channel": {
+      "latency": 1  // cycles
+    },
+    "channel_log": {
+      "file": "/dev/null"  // "channels.csv"
+    },
+    "routing": {
+      "algorithm": "dimension_order",
+      "latency": 1
+    },
+    "interface": {
+      "type": "standard",
+      "fixed_msg_vc": false,
+      "crossbar_scheduler": {
+        "allocator": {
+          "type": "r_separable",
+          "slip_latch": true,
+          "resource_arbiter": {
+            "type": "comparing",
+            "greater": false
+          }
+        },
+        "packet_lock": true,
+        "idle_unlock": false
+      },
+      "init_credits": 16,
+      "crossbar": {
+        "latency": 1  // cycles
+      }
+    },
+    "router": {
+      "architecture": "input_queued",
+      "congestion_status": {
+        "latency": 1
+      },
+      "input_queue_depth": 16,
+      "vca_swa_wait": true,
+      "crossbar": {
+        "latency": 1  // cycles
+      },
+      "vc_scheduler": {
+        "allocator": {
+          "type": "rc_separable",
+          "slip_latch": true,
+          "iterations": 1,
+          "resource_arbiter": {
+            "type": "comparing",
+            "greater": false
+          },
+          "client_arbiter": {
+            "type": "lslp"
+          }
+        }
+      },
+      "crossbar_scheduler": {
+        "allocator": {
+          "type": "r_separable",
+          "slip_latch": true,
+          "resource_arbiter": {
+            "type": "comparing",
+            "greater": false
+          }
+        },
+        "packet_lock": true,
+        "idle_unlock": false
+      }
+    }
+  },
+  "application": {
+    "type": "ntrace",
+    "max_injection_rate": -1,  // infinite injection rate
+    "memory_slice": 2,
+    "trace_file": "/afs/ir/users/h/w/hwx/ee382c/proj/projenv/supersim/test_trace",
+    "block_size": 2,  // bytes
+    "bytes_per_flit": 8,
+    "header_overhead": 4,  // bytes
+    "max_packet_size": 16,  // flits
+    "processor_terminal": {
+      "latency": 1
+    },
+    "dim_pe": [4, 4],  // Size of process element array
+    "num_srams": 4,
+    "memory_terminal": {
+      "latency": 1
+    },
+    "message_log": {
+      "file": "/dev/null"  // "data.mpf.gz"
+    },
+    "rate_log": {
+      "file": "/dev/null"  // "rates.csv"
+    }
+  },
+  "metadata_handler": {
+    "type": "zero"
+  },
+  "debug": []
+}

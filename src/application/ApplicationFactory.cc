@@ -20,6 +20,7 @@
 #include "application/Application.h"
 #include "application/stresstest/Application.h"
 #include "application/simplemem/Application.h"
+#include "application/ntrace/Application.h"
 #include "application/singlestream/Application.h"
 
 Application* ApplicationFactory::createApplication(
@@ -31,6 +32,9 @@ Application* ApplicationFactory::createApplication(
                                        _settings);
   } else if (type == "simple_mem") {
     return new SimpleMem::Application(_name, _parent, _metadataHandler,
+                                      _settings);
+  } else if (type == "ntrace") {
+    return new Ntrace::Application(_name, _parent, _metadataHandler,
                                       _settings);
   } else if (type == "single_stream") {
     return new SingleStream::Application(_name, _parent, _metadataHandler,

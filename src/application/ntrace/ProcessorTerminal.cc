@@ -249,7 +249,7 @@ void ProcessorTerminal::sendMemoryResponse() {
 
   // send the response to the requester
   u32 requesterId = request->getSourceId();
-  assert((requesterId & 0x1) == 1);
+  assert(requesterId >= app->numSrams());
   dbgprintf("sending %s response to %u (address %u)",
     (respOp == MemoryOp::eOp::kWriteResp) ?
     "write" : "read", requesterId, address);

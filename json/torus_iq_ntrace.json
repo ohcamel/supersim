@@ -99,7 +99,7 @@
       "latency": 1
     },
     "message_log": {
-      "file": "/dev/null"  // "data.mpf.gz"
+      "file": "ntrace.mpf.gz"  // "data.mpf.gz"
     },
     "rate_log": {
       "file": "/dev/null"  // "rates.csv"

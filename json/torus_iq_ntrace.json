@@ -17,10 +17,10 @@
       "latency": 1  // cycles
     },
     "channel_log": {
-      "file": "/dev/null"  // "channels.csv"
+      "file": "channels.csv"  // "channels.csv"
     },
     "routing": {
-      "algorithm": "dimension_order",
+      "algorithm": "mesh_dimension_order",
       "latency": 1
     },
     "interface": {
@@ -99,14 +99,14 @@
       "latency": 1
     },
     "message_log": {
-      "file": "ntrace.mpf.gz"  // "data.mpf.gz"
+      "file": "ntrace.mpf"  // "data.mpf.gz"
     },
     "rate_log": {
-      "file": "/dev/null"  // "rates.csv"
+      "file": "rates.csv"  // "rates.csv"
     }
   },
   "metadata_handler": {
     "type": "zero"
   },
-  "debug": []
+  "debug": ["Application"]
 }

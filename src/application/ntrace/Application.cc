@@ -35,7 +35,7 @@ Application::Application(const std::string& _name, const Component* _parent,
     : ::Application(_name, _parent, _metadataHandler, _settings) {
   numVcs_ = gSim->getNetwork()->numVcs();
   assert(numVcs_ > 0);
-
+  setDebug(true);
   bytesPerFlit_ = _settings["bytes_per_flit"].asUInt();
   assert(bytesPerFlit_ > 0);
   headerOverhead_ = _settings["header_overhead"].asUInt();

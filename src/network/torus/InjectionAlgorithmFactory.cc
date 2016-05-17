@@ -36,6 +36,9 @@ InjectionAlgorithm* InjectionAlgorithmFactory::createInjectionAlgorithm(
   if (algorithm == "dimension_order") {
     return new Torus::FixedSetsInjectionAlgorithm(
         _name, _parent, _interface, latency, numVcs_, 2, {0, 1});
+  } else  if (algorithm == "mesh_dimension_order") {
+    return new Torus::FixedSetsInjectionAlgorithm(
+        _name, _parent, _interface, latency, numVcs_, 1, {0});
   } else  if (algorithm == "valiants") {
     return new Torus::FixedSetsInjectionAlgorithm(
         _name, _parent, _interface, latency, numVcs_, 4, {0, 1, 2, 3});

@@ -38,3 +38,14 @@ bin/
 *.mpf.gz
 *.csv
 *.csv.gz
+
+# vim files
+tags
+*.swp
+
+# Visual studio
+.vs/
+*.sln
+*.VC.db
+*.VC.opendb
+*.vcxproj*

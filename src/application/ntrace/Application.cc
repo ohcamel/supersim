@@ -128,7 +128,10 @@ void Application::parseTraceFile() {
   std::string line;
 
   assert(file.good());
-  while (file >> line) {
+  while (true) {
+    std::getline(file, line);
+    if (!file) break;
+
     auto fields = split(line, ' ');
     assert(fields.size() == 5);
 

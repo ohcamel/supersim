@@ -166,15 +166,23 @@ u32 Application::traceNameToId(std::string name) {
   // 2-3 represents node (2,3)
   // m-0 represents SRAM 0
   // SRAMs start from ID 0
-  auto fields = split(name, '-');
-  assert(fields.size() == 2);
-  if (fields[0] == "m") {
-    u32 mem_id = std::stoi(fields[1]);
+  u32 dash = 0;
+  while (true) {
+    auto c = name[dash];
+    if (!c) assert(false);
+    if (c == '-') break;
+    dash++;
+  }
+  name[dash] = '\0';
+  const char* f1 = name.c_str();
+  const char* f2 = f1 + dash + 1;
+  if (*f1 == 'm') {
+    u32 mem_id = std::stoi(f2);
     assert(mem_id < numSrams_);
     return mem_id;
   } else {
-    u32 node_row = std::stoi(fields[0]);
-    u32 node_col = std::stoi(fields[1]);
+    u32 node_row = std::stoi(f1);
+    u32 node_col = std::stoi(f2);
     assert(node_row < rowsPE_);
     assert(node_col < colsPE_);
     return node_row * colsPE_ + node_col + numSrams_;

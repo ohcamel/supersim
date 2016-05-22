@@ -130,10 +130,12 @@ std::vector<std::string> Application::split(const std::string &s, char delim) {
 void Application::parseTraceFile() {
   std::ifstream file(traceFile_);
   std::string line;
+  u32 lnCnt = 0;
 
   assert(file.good());
   while (true) {
     std::getline(file, line);
+    lnCnt++;
     if (!file) break;
 
     auto fields = split(line, ' ');
@@ -157,6 +159,10 @@ void Application::parseTraceFile() {
       op.op = MemoryOp::eOp::kWriteReq;
     } else {
       assert(false);
+    }
+
+    if (lnCnt % 5000000 == 0) {
+      dbgprintf("Trace file %u lines read", lnCnt);
     }
 
     // Initiator is always a PE

@@ -61,7 +61,7 @@ Application::Application(const std::string& _name, const Component* _parent,
   assert((memorySlice_ % blockSize_) == 0);
 
   // Parse the trace file
-  dbgprintf("Trace file: ", traceFile_.c_str());
+  dbgprintf("Trace file: %s", traceFile_.c_str());
   parseTraceFile();
 
   // create terminals
@@ -226,7 +226,7 @@ void Application::processorComplete(u32 _id) {
 }
 
 void Application::processEvent(void* _event, s32 _type) {
-  dbgprintf("Ntrace application starting\n");
+  dbgprintf("Ntrace application starting");
   gSim->startMonitoring();
 }
 

@@ -110,15 +110,19 @@ f64 Application::percentComplete() const {
 
 void Application::split(const std::string &s, char delim,
              std::vector<std::string> *elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems->push_back(item);
+    if (elems == nullptr) return;
+    std::string::size_type lastPos = s.find_first_not_of(delim, 0);
+    std::string::size_type pos     = s.find_first_of(delim, lastPos);
+    while (std::string::npos != pos || std::string::npos != lastPos) {
+        elems->push_back(s.substr(lastPos, pos - lastPos));
+        lastPos = s.find_first_not_of(delim, pos);
+        pos = s.find_first_of(delim, lastPos);
     }
 }
 
 std::vector<std::string> Application::split(const std::string &s, char delim) {
     std::vector<std::string> elems;
+    elems.reserve(8);
     split(s, delim, &elems);
     return elems;
 }

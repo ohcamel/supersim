@@ -87,7 +87,7 @@
     "type": "ntrace",
     "max_injection_rate": -1,  // infinite injection rate
     "memory_slice": 2,
-    "trace_file": "trace/trace_PE4x4_small",
+    "trace_file": "trace/trace_PE4x4",
     "block_size": 2,  // bytes
     "bytes_per_flit": 8,
     "header_overhead": 4,  // bytes

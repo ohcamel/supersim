@@ -26,6 +26,7 @@
 #include <vector>
 #include <queue>
 
+#include "network/torus/Network.h"
 #include "event/Component.h"
 #include "application/Application.h"
 #include "application/ntrace/MemoryOp.h"
@@ -60,6 +61,8 @@ class Application : public ::Application {
   std::queue<TraceOp> * getTraceQ(u32 pe);
   const std::queue<TraceOp> * getTraceQ(u32 pe) const;
 
+  u32 PeIdBase() const;
+
  private:
   u32 numVcs_;
 
@@ -77,8 +80,14 @@ class Application : public ::Application {
   u32 numSrams_;
   u32 rowsPE_;
   u32 colsPE_;
+
+  // How many rows and columns of PE array per router
+  u32 routerRows_;
+  u32 routerCols_;
   std::string traceFile_;
   std::queue<TraceOp> * traceRequests_;
+
+  Torus::Network *network_;
 
   void parseTraceFile();
   u32 traceNameToId(std::string name);

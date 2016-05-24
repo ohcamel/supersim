@@ -35,8 +35,8 @@ ProcessorTerminal::ProcessorTerminal(
   assert(latency_ > 0);
   const Application* app = dynamic_cast<const Application*>(_parent);
   assert(app);
-  assert(_id >= app->numSrams());
-  PeId = _id - app->numSrams();
+  assert(_id >= app->PeIdBase());
+  PeId = _id - app->PeIdBase();
   assert(PeId < app->numPEs());
   remainingAccesses_ = app->getTraceQ(PeId)->size();
   numMemoryAccesses_ = remainingAccesses_;
@@ -144,10 +144,10 @@ void ProcessorTerminal::startNextMemoryAccess() {
 
   // generate a memory request
   u32 address = 0;
-  auto op_queue = app->getTraceQ(getId() - app->numSrams());
+  auto op_queue = app->getTraceQ(getId() - app->PeIdBase());
   Application::TraceOp op = op_queue->front();
   op_queue->pop();
-  MemoryOp* memOp = new MemoryOp(op.op, address, blockSize);
+  MemoryOp* memOp = new MemoryOp(op.op, address, (op.size + 7)/8);
   if (op.op == MemoryOp::eOp::kWriteReq) {
     fsm_ = pState::kWaitingForWriteResp;
   } else {
@@ -249,7 +249,7 @@ void ProcessorTerminal::sendMemoryResponse() {
 
   // send the response to the requester
   u32 requesterId = request->getSourceId();
-  assert(requesterId >= app->numSrams());
+  assert(requesterId >= app->PeIdBase());
   dbgprintf("sending %s response to %u (address %u)",
     (respOp == MemoryOp::eOp::kWriteResp) ?
     "write" : "read", requesterId, address);

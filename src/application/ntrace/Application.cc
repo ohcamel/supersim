@@ -23,6 +23,7 @@
 #include "application/ntrace/ProcessorTerminal.h"
 #include "event/Simulator.h"
 #include "network/Network.h"
+#include "application/NullTerminal.h"
 
 #define ISPOW2INT(X) (((X) != 0) && !((X) & ((X) - 1)))  /*glibc trick*/
 #define ISPOW2(X) (ISPOW2INT(X) == 0 ? false : true)
@@ -33,20 +34,32 @@ Application::Application(const std::string& _name, const Component* _parent,
                          MetadataHandler* _metadataHandler,
                          Json::Value _settings)
     : ::Application(_name, _parent, _metadataHandler, _settings) {
-  numVcs_ = gSim->getNetwork()->numVcs();
+  network_ = static_cast<Torus::Network *>(gSim->getNetwork());
+  std::vector<u32> dimensionWidths = network_->getDimensionWidths();
+  u32 concentration = network_->getConcentration();
+  numVcs_ = network_->numVcs();
   assert(numVcs_ > 0);
-  setDebug(true);
   bytesPerFlit_ = _settings["bytes_per_flit"].asUInt();
   assert(bytesPerFlit_ > 0);
   headerOverhead_ = _settings["header_overhead"].asUInt();
   maxPacketSize_ = _settings["max_packet_size"].asUInt();
 
   numSrams_ = _settings["num_srams"].asUInt();
+  assert(numSrams_ == dimensionWidths[0]);
   assert(_settings["dim_pe"].isArray());
   rowsPE_ = _settings["dim_pe"][0].asUInt();
   colsPE_ = _settings["dim_pe"][1].asUInt();
   numPEs_ = rowsPE_ * colsPE_;
-  assert(numTerminals() == numPEs_ + numSrams_);
+  assert(dimensionWidths.size() == 2);
+
+  routerCols_ = colsPE_ / dimensionWidths[0];
+  routerRows_ = rowsPE_ / (dimensionWidths[1]-1);
+
+  assert(rowsPE_ % (dimensionWidths[1] - 1) == 0);
+  assert(colsPE_ %  dimensionWidths[0] == 0);
+
+  assert(numPEs_ == ((dimensionWidths[1] - 1)* dimensionWidths[0]
+                      * concentration));
 
   // Initialize the queue for each processor node
   traceRequests_ = new std::queue<TraceOp> [numPEs_];
@@ -68,20 +81,26 @@ Application::Application(const std::string& _name, const Component* _parent,
   remainingProcessors_ = 0;
   for (u32 t = 0; t < numTerminals(); t++) {
     std::vector<u32> address;
-    gSim->getNetwork()->translateIdToAddress(t, &address);
+    network_->translateIdToAddress(t, &address);
 
-    if (t < numSrams_) {
-      std::string tname = "MemoryTerminal_" + std::to_string(t);
-
-      MemoryTerminal* terminal = new MemoryTerminal(
+    if (t < PeIdBase()) {
+      if (t % concentration == 0) {
+        std::string tname = "MemoryTerminal_" + std::to_string(t);
+        MemoryTerminal* terminal = new MemoryTerminal(
           tname, this, t, address, memorySlice_, this,
           _settings["memory_terminal"]);
-      setTerminal(t, terminal);
+        setTerminal(t, terminal);
+      } else {
+        std::string tname = "NullTerminal_" + std::to_string(t);
+        NullTerminal* terminal = new NullTerminal(tname, this, t,
+          address, this);
+        setTerminal(t, terminal);
+      }
     } else {
       std::string tname = "ProcessorTerminal_" +
-          std::to_string(remainingProcessors_);
+        std::to_string(remainingProcessors_);
       ProcessorTerminal* terminal = new ProcessorTerminal(
-          tname, this, t, address, this, _settings["processor_terminal"]);
+        tname, this, t, address, this, _settings["processor_terminal"]);
       setTerminal(t, terminal);
       remainingProcessors_++;
     }
@@ -99,7 +118,7 @@ Application::~Application() {
 f64 Application::percentComplete() const {
   f64 percentSum = 0.0;
   u32 processorCount = 0;
-  for (u32 idx = numSrams_; idx < numTerminals(); idx++) {
+  for (u32 idx = PeIdBase(); idx < numTerminals(); idx++) {
     ProcessorTerminal* t =
         reinterpret_cast<ProcessorTerminal*>(getTerminal(idx));
     percentSum += t->percentComplete();
@@ -156,8 +175,8 @@ void Application::parseTraceFile() {
     }
 
     // Initiator is always a PE
-    assert(initiator >= numSrams_);
-    traceRequests_[initiator - numSrams_].push(op);
+    assert(initiator >= PeIdBase());
+    traceRequests_[initiator - PeIdBase()].push(op);
   }
 }
 
@@ -168,16 +187,18 @@ u32 Application::traceNameToId(std::string name) {
   // SRAMs start from ID 0
   auto fields = split(name, '-');
   assert(fields.size() == 2);
+  u32 row, col;
+
   if (fields[0] == "m") {
-    u32 mem_id = std::stoi(fields[1]);
-    assert(mem_id < numSrams_);
-    return mem_id;
+    col = std::stoi(fields[1]);
+    assert(col < numSrams_);
+    return col * network_->getConcentration();
   } else {
-    u32 node_row = std::stoi(fields[0]);
-    u32 node_col = std::stoi(fields[1]);
-    assert(node_row < rowsPE_);
-    assert(node_col < colsPE_);
-    return node_row * colsPE_ + node_col + numSrams_;
+    row = std::stoi(fields[0]);
+    col = std::stoi(fields[1]);
+    assert(row < rowsPE_);
+    assert(col < colsPE_);
+    return row * colsPE_ + col + PeIdBase();
   }
 }
 
@@ -238,6 +259,10 @@ std::queue<Application::TraceOp>* Application::getTraceQ(u32 pe) {
 const std::queue<Application::TraceOp>* Application::getTraceQ(u32 pe) const {
   assert(pe < numPEs_);
   return &traceRequests_[pe];
+}
+
+u32 Application::PeIdBase() const {
+  return network_->getConcentration() * numSrams_;
 }
 
 }  // namespace Ntrace

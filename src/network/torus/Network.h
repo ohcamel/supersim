@@ -42,6 +42,8 @@ class Network : public ::Network {
   Router* getRouter(u32 _id) const override;
   Interface* getInterface(u32 _id) const override;
   void translateIdToAddress(u32 _id, std::vector<u32>* _address) const override;
+  u32 getConcentration() const;
+  std::vector<u32> getDimensionWidths() const;
 
  protected:
   void collectChannels(std::vector<Channel*>* _channels) override;

@@ -35,3 +35,7 @@ void NullTerminal::messageEnteredInterface(Message* _message) {
 void NullTerminal::messageExitedNetwork(Message* _message) {
   assert(false);
 }
+
+void NullTerminal::handleMessage(Message* _message) {
+  assert(false);
+}

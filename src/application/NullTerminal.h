@@ -32,6 +32,7 @@ class NullTerminal : public Terminal {
   void receiveMessage(Message* _message) override;
   void messageEnteredInterface(Message* _message) override;
   void messageExitedNetwork(Message* _message) override;
+  void handleMessage(Message* _message) override;
 };
 
 #endif  // APPLICATION_NULLTERMINAL_H_

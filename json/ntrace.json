@@ -6,7 +6,7 @@
     "random_seed": 12345678
   },
   "network": {
-    "topology": "bla bla",
+    "topology": "torus",
     "dimensions": [4, 5],
     "dimension_widths": [4, 5],
     "dimension_weights": [1, 1],

@@ -28,12 +28,13 @@
 namespace Ntrace {
 
 MemoryTerminal::MemoryTerminal(
-    const std::string& _name, const Component* _parent, u32 _id,
+    const std::string& _name, const Component* _parent, u32 _id, u32 _tid,
     const std::vector<u32>& _address, u32 _memorySlice, ::Application* _app,
     Json::Value _settings)
     : ::Terminal(_name, _parent, _id, _address, _app),
       fsm_(eState::kWaiting) {
   memoryOffset_ = 0;
+  tid_ = _tid;
   memory_ = new u8[_memorySlice];
   latency_ = _settings["latency"].asUInt();
   assert(latency_ > 0);
@@ -48,7 +49,7 @@ void MemoryTerminal::processEvent(void* _event, s32 _type) {
 }
 
 void MemoryTerminal::handleMessage(Message* _message) {
-  dbgprintf("received message");
+  dbgprintf("SRAM_%u received message", tid_);
 
   // log the message
   Application* app = reinterpret_cast<Application*>(gSim->getApplication());
@@ -143,7 +144,6 @@ void MemoryTerminal::sendMemoryResponse() {
 
   // send the response to the requester
   u32 requesterId = request->getSourceId();
-  assert(requesterId >= app->PeIdBase());
   dbgprintf("sending %s response to %u (address %u)",
             (respOp == MemoryOp::eOp::kWriteResp) ?
             "write" : "read", requesterId, address);

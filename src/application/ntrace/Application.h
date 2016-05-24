@@ -63,6 +63,9 @@ class Application : public ::Application {
 
   u32 PeIdBase() const;
 
+  u32 tid2nid(u32 tid) const;
+  u32 nid2tid(u32 nid) const;
+
  private:
   u32 numVcs_;
 
@@ -86,6 +89,8 @@ class Application : public ::Application {
   u32 routerCols_;
   std::string traceFile_;
   std::queue<TraceOp> * traceRequests_;
+  std::vector<int> tid2nid_;
+  std::unordered_map<u32, u32> nid2tid_;
 
   Torus::Network *network_;
 

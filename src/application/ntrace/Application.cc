@@ -24,6 +24,7 @@
 #include "event/Simulator.h"
 #include "network/Network.h"
 #include "application/NullTerminal.h"
+#include "network/torus/util.h"
 
 #define ISPOW2INT(X) (((X) != 0) && !((X) & ((X) - 1)))  /*glibc trick*/
 #define ISPOW2(X) (ISPOW2INT(X) == 0 ? false : true)
@@ -77,35 +78,63 @@ Application::Application(const std::string& _name, const Component* _parent,
   dbgprintf("Trace file: %s", traceFile_.c_str());
   parseTraceFile();
 
-  // create terminals
-  remainingProcessors_ = 0;
-  for (u32 t = 0; t < numTerminals(); t++) {
-    std::vector<u32> address;
-    network_->translateIdToAddress(t, &address);
+  // Initialize trace ID to network ID lookup table
+  for (u32 i = 0; i < numPEs_ + numSrams_; i++) {
+    tid2nid_.push_back(-1);
+  }
+  u32 tid = 0;
+  u32 nt = 0;
+  // Create memory terminals
+  for (u32 t = 0; t < numSrams_; t++) {
+    // There are numSrams_ routers. Each connects to a single memory terminal
+    std::vector<u32> address = {0, t, 0};
+    u32 id = Torus::computeId(address, dimensionWidths, concentration);
+    dbgprintf("SRAM_%u, id_%u", t, id);
 
-    if (t < PeIdBase()) {
-      if (t % concentration == 0) {
-        std::string tname = "MemoryTerminal_" + std::to_string(t);
-        MemoryTerminal* terminal = new MemoryTerminal(
-          tname, this, t, address, memorySlice_, this,
-          _settings["memory_terminal"]);
-        setTerminal(t, terminal);
-      } else {
-        std::string tname = "NullTerminal_" + std::to_string(t);
-        NullTerminal* terminal = new NullTerminal(tname, this, t,
-          address, this);
-        setTerminal(t, terminal);
-      }
-    } else {
+    std::string tname = "MemoryTerminal_" + std::to_string(t);
+    MemoryTerminal* terminal = new MemoryTerminal(
+      tname, this, id, tid, address, memorySlice_, this,
+      _settings["memory_terminal"]);
+    setTerminal(id, terminal);
+    tid2nid_[tid++] = id;
+
+    for (u32 c = 1; c < concentration; c++) {
+      // Connect null terminals to the unused local router ports
+      address[0] = c;
+      std::string tname = "NullTerminal_" + std::to_string(nt++);
+      id = Torus::computeId(address, dimensionWidths, concentration);
+      dbgprintf("NT_%u, id_%u", nt, id);
+      NullTerminal* terminal = new NullTerminal(tname, this, t, address, this);
+      setTerminal(id, terminal);
+    }
+  }
+
+  // Create processor terminals
+  remainingProcessors_ = 0;
+  for (u32 r = 0; r < rowsPE_; r++) {
+    for (u32 c = 0; c < colsPE_; c++) {
+      u32 routerR = r / routerRows_ + 1;
+      u32 routerC = c / routerCols_;
+      u32 rem = (r % routerRows_) * routerCols_ + c % routerCols_;
+      std::vector<u32> address = {rem, routerC, routerR};
+      u32 id = Torus::computeId(address, dimensionWidths, concentration);
+      dbgprintf("PE (%u, %u): tid %u, nid %u", r, c, tid, id);
+
       std::string tname = "ProcessorTerminal_" +
         std::to_string(remainingProcessors_);
       ProcessorTerminal* terminal = new ProcessorTerminal(
-        tname, this, t, address, this, _settings["processor_terminal"]);
-      setTerminal(t, terminal);
+        tname, this, id, tid, address,
+        this, _settings["processor_terminal"]);
+      setTerminal(id, terminal);
+      tid2nid_[tid++] = id;
       remainingProcessors_++;
     }
   }
   assert(remainingProcessors_ == numPEs_);
+  assert(tid == numSrams_ + numPEs_);
+  for (u32 i = 0; i < tid; i++) {
+    nid2tid_[tid2nid_[i]] = i;
+  }
 
   // this application always wants monitor
   addEvent(0, 0, nullptr, 0);
@@ -185,8 +214,8 @@ void Application::parseTraceFile() {
     }
 
     // Initiator is always a PE
-    assert(initiator >= PeIdBase());
-    traceRequests_[initiator - PeIdBase()].push(op);
+    assert(initiator >= numSrams_);
+    traceRequests_[initiator - numSrams_].push(op);
   }
 }
 
@@ -210,13 +239,13 @@ u32 Application::traceNameToId(std::string name) {
   if (*f1 == 'm') {
     col = std::stoi(f2);
     assert(col < numSrams_);
-    return col * network_->getConcentration();
+    return col;
   } else {
     row = std::stoi(f1);
     col = std::stoi(f2);
     assert(row < rowsPE_);
     assert(col < colsPE_);
-    return row * colsPE_ + col + PeIdBase();
+    return row * colsPE_ + col + numSrams_;
   }
 }
 
@@ -281,6 +310,17 @@ const std::queue<Application::TraceOp>* Application::getTraceQ(u32 pe) const {
 
 u32 Application::PeIdBase() const {
   return network_->getConcentration() * numSrams_;
+}
+
+u32 Application::tid2nid(u32 tid) const {
+  assert(tid < numPEs_ + numSrams_);
+  return tid2nid_[tid];
+}
+
+u32 Application::nid2tid(u32 nid) const {
+  u32 ret = nid2tid_.at(nid);
+  assert(ret < numPEs_ + numSrams_);
+  return ret;
 }
 
 }  // namespace Ntrace

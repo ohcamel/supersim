@@ -27,7 +27,7 @@
 namespace Ntrace {
 
 ProcessorTerminal::ProcessorTerminal(
-    const std::string& _name, const Component* _parent, u32 _id,
+    const std::string& _name, const Component* _parent, u32 _id, u32 _tid,
     const std::vector<u32>& _address, ::Application* _app,
     Json::Value _settings)
     : ::Terminal(_name, _parent, _id, _address, _app) {
@@ -35,10 +35,8 @@ ProcessorTerminal::ProcessorTerminal(
   assert(latency_ > 0);
   const Application* app = dynamic_cast<const Application*>(_parent);
   assert(app);
-  assert(_id >= app->PeIdBase());
-  PeId = _id - app->PeIdBase();
-  assert(PeId < app->numPEs());
-  remainingAccesses_ = app->getTraceQ(PeId)->size();
+  tid_ = _tid;
+  remainingAccesses_ = app->getTraceQ(_tid - app->numSrams())->size();
   numMemoryAccesses_ = remainingAccesses_;
   fsm_ = pState::kDone;
   mfsm_ = mState::kWaiting;
@@ -81,7 +79,7 @@ void ProcessorTerminal::handleMessage(Message* _message) {
     delete memOp;
     delete _message;
 
-    remainingAccesses_ = app->getTraceQ(PeId)->size();
+    remainingAccesses_ = app->getTraceQ(tid_ - app->numSrams())->size();
 
     dbgprintf("remaining accesses = %u", remainingAccesses_);
     if (remainingAccesses_ > 0) {
@@ -144,7 +142,7 @@ void ProcessorTerminal::startNextMemoryAccess() {
 
   // generate a memory request
   u32 address = 0;
-  auto op_queue = app->getTraceQ(getId() - app->PeIdBase());
+  auto op_queue = app->getTraceQ(tid_ - app->numSrams());
   Application::TraceOp op = op_queue->front();
   op_queue->pop();
   MemoryOp* memOp = new MemoryOp(op.op, address, (op.size + 7)/8);
@@ -155,7 +153,7 @@ void ProcessorTerminal::startNextMemoryAccess() {
   }
 
   // determine the proper memory terminal
-  u64 memoryTerminalId = op.target;
+  u64 memoryTerminalId = app->tid2nid(op.target);
 
   // determine message length
   u32 messageLength = headerOverhead + 1 + sizeof(u32) + blockSize;

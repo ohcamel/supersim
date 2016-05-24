@@ -32,8 +32,8 @@ namespace Ntrace {
 
 class MemoryTerminal : public Terminal {
  public:
-  MemoryTerminal(const std::string& _name, const Component* _parent,
-                 u32 _id, const std::vector<u32>& _address, u32 _memorySlice,
+  MemoryTerminal(const std::string& _name, const Component* _parent, u32 _id,
+                 u32 _tid, const std::vector<u32>& _address, u32 _memorySlice,
                  ::Application* _app, Json::Value _settings);
   ~MemoryTerminal();
   void processEvent(void* _event, s32 _type) override;
@@ -50,6 +50,7 @@ class MemoryTerminal : public Terminal {
   u32 memoryOffset_;
   u8* memory_;
   u32 latency_;
+  u32 tid_;
 
   std::queue<Message*> messages_;
   eState fsm_;

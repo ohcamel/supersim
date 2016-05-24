@@ -10,7 +10,7 @@
     "dimensions": [4, 5],
     "dimension_widths": [4, 5],
     "dimension_weights": [1, 1],
-    "concentration": 4,
+    "concentration": 1,
     "num_vcs": 2,
     "internal_channel": {
       "latency": 1  // cycles
@@ -95,7 +95,7 @@
     "processor_terminal": {
       "latency": 1
     },
-    "dim_pe": [8, 8],  // Size of process element array
+    "dim_pe": [4, 4],  // Size of process element array
     "num_srams": 4,
     "memory_terminal": {
       "latency": 1

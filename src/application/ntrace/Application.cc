@@ -74,7 +74,7 @@ Application::Application(const std::string& _name, const Component* _parent,
   assert((memorySlice_ % blockSize_) == 0);
 
   // Parse the trace file
-  dbgprintf("Trace file: ", traceFile_.c_str());
+  dbgprintf("Trace file: %s", traceFile_.c_str());
   parseTraceFile();
 
   // create terminals
@@ -129,15 +129,19 @@ f64 Application::percentComplete() const {
 
 void Application::split(const std::string &s, char delim,
              std::vector<std::string> *elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems->push_back(item);
+    if (elems == nullptr) return;
+    std::string::size_type lastPos = s.find_first_not_of(delim, 0);
+    std::string::size_type pos     = s.find_first_of(delim, lastPos);
+    while (std::string::npos != pos || std::string::npos != lastPos) {
+        elems->push_back(s.substr(lastPos, pos - lastPos));
+        lastPos = s.find_first_not_of(delim, pos);
+        pos = s.find_first_of(delim, lastPos);
     }
 }
 
 std::vector<std::string> Application::split(const std::string &s, char delim) {
     std::vector<std::string> elems;
+    elems.reserve(8);
     split(s, delim, &elems);
     return elems;
 }
@@ -145,10 +149,12 @@ std::vector<std::string> Application::split(const std::string &s, char delim) {
 void Application::parseTraceFile() {
   std::ifstream file(traceFile_);
   std::string line;
+  u32 lnCnt = 0;
 
   assert(file.good());
   while (true) {
     std::getline(file, line);
+    lnCnt++;
     if (!file) break;
 
     auto fields = split(line, ' ');
@@ -174,6 +180,10 @@ void Application::parseTraceFile() {
       assert(false);
     }
 
+    if (lnCnt % 5000000 == 0) {
+      dbgprintf("Trace file %u lines read", lnCnt);
+    }
+
     // Initiator is always a PE
     assert(initiator >= PeIdBase());
     traceRequests_[initiator - PeIdBase()].push(op);
@@ -185,17 +195,25 @@ u32 Application::traceNameToId(std::string name) {
   // 2-3 represents node (2,3)
   // m-0 represents SRAM 0
   // SRAMs start from ID 0
-  auto fields = split(name, '-');
-  assert(fields.size() == 2);
+  u32 dash = 0;
+  while (true) {
+    auto c = name[dash];
+    if (!c) assert(false);
+    if (c == '-') break;
+    dash++;
+  }
+  name[dash] = '\0';
+  const char* f1 = name.c_str();
+  const char* f2 = f1 + dash + 1;
   u32 row, col;
 
-  if (fields[0] == "m") {
-    col = std::stoi(fields[1]);
+  if (*f1 == 'm') {
+    col = std::stoi(f2);
     assert(col < numSrams_);
     return col * network_->getConcentration();
   } else {
-    row = std::stoi(fields[0]);
-    col = std::stoi(fields[1]);
+    row = std::stoi(f1);
+    col = std::stoi(f2);
     assert(row < rowsPE_);
     assert(col < colsPE_);
     return row * colsPE_ + col + PeIdBase();
@@ -247,7 +265,7 @@ void Application::processorComplete(u32 _id) {
 }
 
 void Application::processEvent(void* _event, s32 _type) {
-  dbgprintf("Ntrace application starting\n");
+  dbgprintf("Ntrace application starting");
   gSim->startMonitoring();
 }
 

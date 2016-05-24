@@ -1,15 +1,17 @@
 {
   "simulator": {
-    "cycle_time": 1000,  // picoseconds
+    "cycle_time": 10,  // picoseconds
     "print_progress": true,
     "print_interval": 1.0,  // seconds
     "random_seed": 12345678
   },
   "network": {
-    "topology": "torus",
+    "topology": "bla bla",
+    "dimensions": [4, 5],
+    "dimension_widths": [4, 5],
+    "dimension_weights": [1, 1],
+    "concentration": 4,
     "num_vcs": 2,
-    "dimensions": [5, 4],
-    "concentration": 1,
     "internal_channel": {
       "latency": 1  // cycles
     },
@@ -17,10 +19,10 @@
       "latency": 1  // cycles
     },
     "channel_log": {
-      "file": "channels.csv"  // "channels.csv"
+      "file": "/dev/null"  // "channels.csv"
     },
     "routing": {
-      "algorithm": "mesh_dimension_order",
+      "algorithm": "bla bla",
       "latency": 1
     },
     "interface": {
@@ -85,7 +87,7 @@
     "type": "ntrace",
     "max_injection_rate": -1,  // infinite injection rate
     "memory_slice": 2,
-    "trace_file": "trace/test_trace",
+    "trace_file": "trace/trace_PE4x4_small",
     "block_size": 2,  // bytes
     "bytes_per_flit": 8,
     "header_overhead": 4,  // bytes
@@ -93,16 +95,16 @@
     "processor_terminal": {
       "latency": 1
     },
-    "dim_pe": [4, 4],  // Size of process element array
+    "dim_pe": [8, 8],  // Size of process element array
     "num_srams": 4,
     "memory_terminal": {
       "latency": 1
     },
     "message_log": {
-      "file": "ntrace.mpf"  // "data.mpf.gz"
+      "file": "/dev/null"  // "data.mpf.gz"
     },
     "rate_log": {
-      "file": "rates.csv"  // "rates.csv"
+      "file": "/dev/null"  // "rates.csv"
     }
   },
   "metadata_handler": {

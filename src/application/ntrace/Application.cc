@@ -147,9 +147,9 @@ Application::~Application() {
 f64 Application::percentComplete() const {
   f64 percentSum = 0.0;
   u32 processorCount = 0;
-  for (u32 idx = PeIdBase(); idx < numTerminals(); idx++) {
+  for (u32 tid = numSrams_; tid < numTerminals(); tid++) {
     ProcessorTerminal* t =
-        reinterpret_cast<ProcessorTerminal*>(getTerminal(idx));
+        reinterpret_cast<ProcessorTerminal*>(getTerminal(tid2nid_[tid]));
     percentSum += t->percentComplete();
     processorCount++;
   }
@@ -306,10 +306,6 @@ std::queue<Application::TraceOp>* Application::getTraceQ(u32 pe) {
 const std::queue<Application::TraceOp>* Application::getTraceQ(u32 pe) const {
   assert(pe < numPEs_);
   return &traceRequests_[pe];
-}
-
-u32 Application::PeIdBase() const {
-  return network_->getConcentration() * numSrams_;
 }
 
 u32 Application::tid2nid(u32 tid) const {

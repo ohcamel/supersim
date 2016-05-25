@@ -61,8 +61,6 @@ class Application : public ::Application {
   std::queue<TraceOp> * getTraceQ(u32 pe);
   const std::queue<TraceOp> * getTraceQ(u32 pe) const;
 
-  u32 PeIdBase() const;
-
   u32 tid2nid(u32 tid) const;
   u32 nid2tid(u32 nid) const;
 

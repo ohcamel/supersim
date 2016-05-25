@@ -7,10 +7,10 @@
   },
   "network": {
     "topology": "torus",
-    "dimensions": [4, 5],
-    "dimension_widths": [4, 5],
+    "dimensions": [4, 4],
+    "dimension_widths": [4, 4],
     "dimension_weights": [1, 1],
-    "concentration": 1,
+    "concentration": 4,
     "num_vcs": 2,
     "internal_channel": {
       "latency": 1  // cycles
@@ -22,7 +22,7 @@
       "file": "/dev/null"  // "channels.csv"
     },
     "routing": {
-      "algorithm": "bla bla",
+      "algorithm": "mesh_dimension_order",
       "latency": 1
     },
     "interface": {

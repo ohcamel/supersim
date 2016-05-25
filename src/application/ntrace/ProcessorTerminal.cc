@@ -143,7 +143,7 @@ void ProcessorTerminal::startNextMemoryAccess() {
   // generate a memory request
   auto op_queue = app->getTraceQ(tid_ - app->numSrams());
   Application::TraceOp op = op_queue->front();
-  op_queue->pop();
+  op_queue->pop_front();
   MemoryOp* memOp = new MemoryOp(op.op, 0, (op.size + 7)/8);
   if (op.op == MemoryOp::eOp::kWriteReq) {
     fsm_ = pState::kWaitingForWriteResp;

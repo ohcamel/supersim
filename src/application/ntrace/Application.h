@@ -24,7 +24,7 @@
 #include <fstream>
 #include <regex>
 #include <vector>
-#include <queue>
+#include <deque>
 
 #include "network/torus/Network.h"
 #include "event/Component.h"
@@ -54,12 +54,17 @@ class Application : public ::Application {
   void processEvent(void* _event, s32 _type) override;
 
   struct TraceOp {
+    u64 ts;    // timestamp
     MemoryOp::eOp op;
     u32 target;
     u32 size;  // Size in bits
+
+    bool operator<(const TraceOp& o) const {
+      return this->ts < o.ts;
+    }
   };
-  std::queue<TraceOp> * getTraceQ(u32 pe);
-  const std::queue<TraceOp> * getTraceQ(u32 pe) const;
+  std::deque<TraceOp> * getTraceQ(u32 pe);
+  const std::deque<TraceOp> * getTraceQ(u32 pe) const;
 
   u32 tid2nid(u32 tid) const;
   u32 nid2tid(u32 nid) const;
@@ -88,7 +93,7 @@ class Application : public ::Application {
   u32 routerRows_;
   u32 routerCols_;
   std::string traceFile_;
-  std::queue<TraceOp> * traceRequests_;
+  std::deque<TraceOp> * traceRequests_;
   std::vector<int> tid2nid_;
   std::unordered_map<u32, u32> nid2tid_;
 

@@ -59,7 +59,7 @@ Application::Application(const std::string& _name, const Component* _parent,
                     (dimensionWidths[COL]-2) * concentration);
 
   // Initialize the queue for each processor node
-  traceRequests_ = new std::queue<TraceOp> [numPEs_];
+  traceRequests_ = new std::deque<TraceOp> [numPEs_];
 
   traceFile_ = _settings["trace_file"].asString();
 
@@ -199,6 +199,9 @@ void Application::parseTraceFile() {
     TraceOp op;
     op.size = std::stoi(fields[3]);
 
+    // Timestamp
+    op.ts = std::stoull(fields[0]);
+
     if (fields[4] == "R") {
       initiator = destId;
       op.target = srcId;
@@ -217,7 +220,13 @@ void Application::parseTraceFile() {
 
     // Initiator is always a PE
     assert(initiator >= numSrams_);
-    traceRequests_[initiator - numSrams_].push(op);
+    traceRequests_[initiator - numSrams_].push_back(op);
+  }
+
+  // Sort requests based on timestamp.
+  for (u32 idx = 0; idx < numPEs_; idx++) {
+    auto& q = traceRequests_[idx];
+    std::sort(q.begin(), q.end());
   }
 }
 
@@ -300,12 +309,12 @@ void Application::processEvent(void* _event, s32 _type) {
   gSim->startMonitoring();
 }
 
-std::queue<Application::TraceOp>* Application::getTraceQ(u32 pe) {
+std::deque<Application::TraceOp>* Application::getTraceQ(u32 pe) {
   assert(pe < numPEs_);
   return &traceRequests_[pe];
 }
 
-const std::queue<Application::TraceOp>* Application::getTraceQ(u32 pe) const {
+const std::deque<Application::TraceOp>* Application::getTraceQ(u32 pe) const {
   assert(pe < numPEs_);
   return &traceRequests_[pe];
 }

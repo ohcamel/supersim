@@ -142,58 +142,64 @@ void ProcessorTerminal::startNextMemoryAccess() {
   u32 headerOverhead = app->headerOverhead();
   u32 maxPacketSize = app->maxPacketSize();
 
-  // generate a memory request
   auto op_queue = app->getTraceQ(tid_ - app->numSrams());
-  Application::TraceOp op = op_queue->front();
-  op_queue->pop_front();
-  remainingAccesses_--;
+  curTimestamp_ = op_queue->front().ts;
 
-  assert(curTimestamp_ <= op.ts);
-  curTimestamp_ = op.ts;
+  // generate memory requests
+  while (!op_queue->empty()) {
 
-  MemoryOp* memOp = new MemoryOp(op.op, 0, (op.size + 7)/8);
-  if (op.op == MemoryOp::eOp::kWriteReq) {
-    fsm_ = pState::kWaitingForWriteResp;
-  } else {
-    fsm_ = pState::kWaitingForReadResp;
-  }
+    // get next request
+    Application::TraceOp op = op_queue->front();
+    assert(curTimestamp_ <= op.ts);
+    if (op.ts > curTimestamp_) break;
 
-  // determine the proper memory terminal
-  u64 memoryTerminalId = app->tid2nid(op.target);
+    op_queue->pop_front();
+    remainingAccesses_--;
 
-  // determine message length
-  u32 messageLength = headerOverhead + 1 + sizeof(u32) + blockSize;
-  messageLength /= bytesPerFlit;
-  u32 numPackets = messageLength / maxPacketSize;
-  if ((messageLength % maxPacketSize) > 0) {
-    numPackets++;
-  }
-
-  // create network message, packets, and flits
-  Message* message = new Message(numPackets, memOp);
-  message->setTransaction(createTransaction());
-
-  u32 flitsLeft = messageLength;
-  for (u32 p = 0; p < numPackets; p++) {
-    u32 packetLength = flitsLeft > maxPacketSize ? maxPacketSize : flitsLeft;
-    Packet* packet = new Packet(p, packetLength, message);
-    message->setPacket(p, packet);
-
-    for (u32 f = 0; f < packetLength; f++) {
-      bool headFlit = f == 0;
-      bool tailFlit = f == (packetLength - 1);
-      Flit* flit = new Flit(f, headFlit, tailFlit, packet);
-      packet->setFlit(f, flit);
+    MemoryOp* memOp = new MemoryOp(op.op, 0, (op.size + 7)/8);
+    if (op.op == MemoryOp::eOp::kWriteReq) {
+      fsm_ = pState::kWaitingForWriteResp;
+    } else {
+      fsm_ = pState::kWaitingForReadResp;
     }
-    flitsLeft -= packetLength;
-  }
 
-  // send the request to the memory terminal
-  dbgprintf("sending %s request to %u",
-            (op.op == MemoryOp::eOp::kWriteReq) ?
-            "write" : "read", memoryTerminalId);
-  waitingResps_++;
-  sendMessage(message, memoryTerminalId);
+    // determine the proper memory terminal
+    u64 memoryTerminalId = app->tid2nid(op.target);
+
+    // determine message length
+    u32 messageLength = headerOverhead + 1 + sizeof(u32) + blockSize;
+    messageLength /= bytesPerFlit;
+    u32 numPackets = messageLength / maxPacketSize;
+    if ((messageLength % maxPacketSize) > 0) {
+      numPackets++;
+    }
+
+    // create network message, packets, and flits
+    Message* message = new Message(numPackets, memOp);
+    message->setTransaction(createTransaction());
+
+    u32 flitsLeft = messageLength;
+    for (u32 p = 0; p < numPackets; p++) {
+      u32 packetLength = flitsLeft > maxPacketSize ? maxPacketSize : flitsLeft;
+      Packet* packet = new Packet(p, packetLength, message);
+      message->setPacket(p, packet);
+
+      for (u32 f = 0; f < packetLength; f++) {
+        bool headFlit = f == 0;
+        bool tailFlit = f == (packetLength - 1);
+        Flit* flit = new Flit(f, headFlit, tailFlit, packet);
+        packet->setFlit(f, flit);
+      }
+      flitsLeft -= packetLength;
+    }
+
+    // send the request to the memory terminal
+    dbgprintf("sending %s request to %u",
+        (op.op == MemoryOp::eOp::kWriteReq) ?
+        "write" : "read", memoryTerminalId);
+    waitingResps_++;
+    sendMessage(message, memoryTerminalId);
+  }
 }
 
 void ProcessorTerminal::sendMemoryResponse() {

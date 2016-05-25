@@ -26,7 +26,6 @@
 #include <vector>
 #include <deque>
 
-#include "network/torus/Network.h"
 #include "event/Component.h"
 #include "application/Application.h"
 #include "application/ntrace/MemoryOp.h"
@@ -96,8 +95,6 @@ class Application : public ::Application {
   std::deque<TraceOp> * traceRequests_;
   std::vector<int> tid2nid_;
   std::unordered_map<u32, u32> nid2tid_;
-
-  Torus::Network *network_;
 
   void parseTraceFile();
   u32 traceNameToId(std::string name);

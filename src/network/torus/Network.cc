@@ -253,11 +253,4 @@ void Network::collectChannels(std::vector<Channel*>* _channels) {
   }
 }
 
-u32 Network::getConcentration() const {
-  return concentration_;
-}
-
-std::vector<u32> Network::getDimensionWidths() const {
-  return dimensionWidths_;
-}
 }  // namespace Torus

@@ -95,11 +95,12 @@
     "header_overhead": 4,  // bytes
     "max_packet_size": 16,  // flits
     "processor_terminal": {
+      "dimension": [8, 8],
+      "sharing": [2, 2],
       "latency": 1
     },
-    "dim_pe": [8, 8],  // Size of process element array
-    "num_srams": 4,
     "memory_terminal": {
+      "place": "surrounding",
       "latency": 1
     },
     "message_log": {

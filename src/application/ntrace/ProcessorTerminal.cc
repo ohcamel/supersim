@@ -43,6 +43,8 @@ ProcessorTerminal::ProcessorTerminal(
   if (remainingAccesses_ > 0) {
     startProcessing();
   }
+  curTimestamp_ = 0;
+  waitingResps_ = 0;
 }
 
 ProcessorTerminal::~ProcessorTerminal() {
@@ -75,18 +77,13 @@ void ProcessorTerminal::handleMessage(Message* _message) {
     // Received response
     // end the transaction
     endTransaction(_message->getTransaction());
+    waitingResps_--;
 
     delete memOp;
     delete _message;
 
-    remainingAccesses_ = app->getTraceQ(tid_ - app->numSrams())->size();
-
-    dbgprintf("remaining accesses = %u", remainingAccesses_);
-    if (remainingAccesses_ > 0) {
+    if (waitingResps_ == 0) {
       startProcessing();
-    } else {
-      Application* app = reinterpret_cast<Application*>(gSim->getApplication());
-      app->processorComplete(getId());
     }
   } else {
     // Received request
@@ -132,7 +129,12 @@ void ProcessorTerminal::startProcessing() {
 }
 
 void ProcessorTerminal::startNextMemoryAccess() {
-  assert(remainingAccesses_ > 0);
+  if (remainingAccesses_ == 0) {
+    Application* app = reinterpret_cast<Application*>(gSim->getApplication());
+    app->processorComplete(getId());
+    return;
+  }
+  dbgprintf("remaining accesses = %u", remainingAccesses_);
 
   Application* app = reinterpret_cast<Application*>(gSim->getApplication());
   u32 blockSize = app->blockSize();
@@ -144,6 +146,11 @@ void ProcessorTerminal::startNextMemoryAccess() {
   auto op_queue = app->getTraceQ(tid_ - app->numSrams());
   Application::TraceOp op = op_queue->front();
   op_queue->pop_front();
+  remainingAccesses_--;
+
+  assert(curTimestamp_ <= op.ts);
+  curTimestamp_ = op.ts;
+
   MemoryOp* memOp = new MemoryOp(op.op, 0, (op.size + 7)/8);
   if (op.op == MemoryOp::eOp::kWriteReq) {
     fsm_ = pState::kWaitingForWriteResp;
@@ -185,6 +192,7 @@ void ProcessorTerminal::startNextMemoryAccess() {
   dbgprintf("sending %s request to %u",
             (op.op == MemoryOp::eOp::kWriteReq) ?
             "write" : "read", memoryTerminalId);
+  waitingResps_++;
   sendMessage(message, memoryTerminalId);
 }
 

@@ -67,6 +67,9 @@ class ProcessorTerminal : public Terminal {
   std::queue<Message*> messages_;
   pState fsm_;
   mState mfsm_;
+
+  u64 curTimestamp_;
+  u32 waitingResps_;
 };
 
 }  // namespace Ntrace

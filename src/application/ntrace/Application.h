@@ -65,6 +65,8 @@ class Application : public ::Application {
   u32 nid2tid(u32 nid) const;
 
  private:
+  const u32 COL = 0;
+  const u32 ROW = 1;
   u32 numVcs_;
 
   u32 totalMemory_;

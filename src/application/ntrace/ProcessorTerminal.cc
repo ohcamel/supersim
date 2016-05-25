@@ -141,11 +141,10 @@ void ProcessorTerminal::startNextMemoryAccess() {
   u32 maxPacketSize = app->maxPacketSize();
 
   // generate a memory request
-  u32 address = 0;
   auto op_queue = app->getTraceQ(tid_ - app->numSrams());
   Application::TraceOp op = op_queue->front();
   op_queue->pop();
-  MemoryOp* memOp = new MemoryOp(op.op, address, (op.size + 7)/8);
+  MemoryOp* memOp = new MemoryOp(op.op, 0, (op.size + 7)/8);
   if (op.op == MemoryOp::eOp::kWriteReq) {
     fsm_ = pState::kWaitingForWriteResp;
   } else {
@@ -183,9 +182,9 @@ void ProcessorTerminal::startNextMemoryAccess() {
   }
 
   // send the request to the memory terminal
-  dbgprintf("sending %s request to %u (address %u)",
+  dbgprintf("sending %s request to %u",
             (op.op == MemoryOp::eOp::kWriteReq) ?
-            "write" : "read", memoryTerminalId, address);
+            "write" : "read", memoryTerminalId);
   sendMessage(message, memoryTerminalId);
 }
 

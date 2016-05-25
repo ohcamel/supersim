@@ -40,27 +40,23 @@ Application::Application(const std::string& _name, const Component* _parent,
   u32 concentration = network_->getConcentration();
   numVcs_ = network_->numVcs();
   assert(numVcs_ > 0);
+  numSrams_ = (dimensionWidths[0] + dimensionWidths[1]) * 2 - 4;
   bytesPerFlit_ = _settings["bytes_per_flit"].asUInt();
   assert(bytesPerFlit_ > 0);
   headerOverhead_ = _settings["header_overhead"].asUInt();
   maxPacketSize_ = _settings["max_packet_size"].asUInt();
-
-  numSrams_ = _settings["num_srams"].asUInt();
-  assert(numSrams_ == dimensionWidths[0]);
   assert(_settings["dim_pe"].isArray());
-  rowsPE_ = _settings["dim_pe"][0].asUInt();
-  colsPE_ = _settings["dim_pe"][1].asUInt();
+  rowsPE_ = _settings["dim_pe"][ROW].asUInt();
+  colsPE_ = _settings["dim_pe"][COL].asUInt();
   numPEs_ = rowsPE_ * colsPE_;
   assert(dimensionWidths.size() == 2);
 
-  routerCols_ = colsPE_ / dimensionWidths[0];
-  routerRows_ = rowsPE_ / (dimensionWidths[1]-1);
+  // Number of columns and rows of PEs per router
+  routerCols_ = colsPE_ / (dimensionWidths[COL]-2);
+  routerRows_ = rowsPE_ / (dimensionWidths[ROW]-2);
 
-  assert(rowsPE_ % (dimensionWidths[1] - 1) == 0);
-  assert(colsPE_ %  dimensionWidths[0] == 0);
-
-  assert(numPEs_ == ((dimensionWidths[1] - 1)* dimensionWidths[0]
-                      * concentration));
+  assert(numPEs_ == (dimensionWidths[ROW]-2) *
+                    (dimensionWidths[COL]-2) * concentration);
 
   // Initialize the queue for each processor node
   traceRequests_ = new std::queue<TraceOp> [numPEs_];
@@ -85,27 +81,33 @@ Application::Application(const std::string& _name, const Component* _parent,
   u32 tid = 0;
   u32 nt = 0;
   // Create memory terminals
-  for (u32 t = 0; t < numSrams_; t++) {
-    // There are numSrams_ routers. Each connects to a single memory terminal
-    std::vector<u32> address = {0, t, 0};
-    u32 id = Torus::computeId(address, dimensionWidths, concentration);
-    dbgprintf("SRAM_%u, id_%u", t, id);
+  std::vector<u32> address = { 0, 0, 0 };
+  for (u32 r = 0; r < dimensionWidths[ROW]; r++) {
+    for (u32 c = 0; c < dimensionWidths[COL]; c++) {
+      if (r == 0 || c == 0 ||
+      r == dimensionWidths[ROW] - 1 || c == dimensionWidths[COL] - 1) {
+        address[0] = 0; address[ROW + 1] = r; address[COL + 1] = c;
+        u32 id = Torus::computeId(address, dimensionWidths, concentration);
+        dbgprintf("SRAM (%d, %d): tid %d nid %u", r, c, tid, id);
 
-    std::string tname = "MemoryTerminal_" + std::to_string(t);
-    MemoryTerminal* terminal = new MemoryTerminal(
-      tname, this, id, tid, address, memorySlice_, this,
-      _settings["memory_terminal"]);
-    setTerminal(id, terminal);
-    tid2nid_[tid++] = id;
+        std::string tname = "MemoryTerminal_" + std::to_string(tid);
+        MemoryTerminal* terminal = new MemoryTerminal(
+          tname, this, id, tid, address, memorySlice_, this,
+          _settings["memory_terminal"]);
+        setTerminal(id, terminal);
+        tid2nid_[tid++] = id;
 
-    for (u32 c = 1; c < concentration; c++) {
-      // Connect null terminals to the unused local router ports
-      address[0] = c;
-      std::string tname = "NullTerminal_" + std::to_string(nt++);
-      id = Torus::computeId(address, dimensionWidths, concentration);
-      dbgprintf("NT_%u, id_%u", nt, id);
-      NullTerminal* terminal = new NullTerminal(tname, this, t, address, this);
-      setTerminal(id, terminal);
+        for (u32 k = 1; k < concentration; k++) {
+          // Connect null terminals to the unused local router ports
+          address[0] = k;
+          std::string tname = "NullTerminal_" + std::to_string(nt++);
+          id = Torus::computeId(address, dimensionWidths, concentration);
+          dbgprintf("NT_%u, nid %u", nt, id);
+          NullTerminal* terminal = new NullTerminal(tname, this,
+            id, address, this);
+          setTerminal(id, terminal);
+        }
+      }
     }
   }
 
@@ -114,9 +116,9 @@ Application::Application(const std::string& _name, const Component* _parent,
   for (u32 r = 0; r < rowsPE_; r++) {
     for (u32 c = 0; c < colsPE_; c++) {
       u32 routerR = r / routerRows_ + 1;
-      u32 routerC = c / routerCols_;
-      u32 rem = (r % routerRows_) * routerCols_ + c % routerCols_;
-      std::vector<u32> address = {rem, routerC, routerR};
+      u32 routerC = c / routerCols_ + 1;
+      u32 k = (r % routerRows_) * routerCols_ + c % routerCols_;
+      address[0] = k; address[ROW+1] = routerR; address[COL+1] = routerC;
       u32 id = Torus::computeId(address, dimensionWidths, concentration);
       dbgprintf("PE (%u, %u): tid %u, nid %u", r, c, tid, id);
 

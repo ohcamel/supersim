@@ -87,7 +87,9 @@
     "type": "ntrace",
     "max_injection_rate": -1,  // infinite injection rate
     "memory_slice": 2,
-    "trace_file": "trace/trace_vgg_partial_out_mem_partition",
+    "trace": {
+      "file": "trace/trace_vgg_partial_out_mem_partition_sorted"
+    },
     "block_size": 2,  // bytes
     "bytes_per_flit": 8,
     "header_overhead": 4,  // bytes

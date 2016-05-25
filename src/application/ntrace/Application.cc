@@ -61,7 +61,7 @@ Application::Application(const std::string& _name, const Component* _parent,
   // Initialize the queue for each processor node
   traceRequests_ = new std::deque<TraceOp> [numPEs_];
 
-  traceFile_ = _settings["trace_file"].asString();
+  traceFile_ = _settings["trace"]["file"].asString();
 
   // check the memory system setup
   memorySlice_ = _settings["memory_slice"].asUInt();

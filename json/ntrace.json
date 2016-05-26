@@ -7,8 +7,8 @@
   },
   "network": {
     "topology": "torus",
-    "dimensions": [4, 4],
-    "dimension_widths": [4, 4],
+    "dimensions": [6, 6],
+    "dimension_widths": [6, 6],
     "dimension_weights": [1, 1],
     "concentration": 4,
     "num_vcs": 2,
@@ -87,7 +87,7 @@
     "type": "ntrace",
     "max_injection_rate": -1,  // infinite injection rate
     "memory_slice": 2,
-    "trace_file": "trace/trace_PE4x4",
+    "trace_file": "trace/trace_vgg_partial_out_mem_partition",
     "block_size": 2,  // bytes
     "bytes_per_flit": 8,
     "header_overhead": 4,  // bytes
@@ -95,13 +95,13 @@
     "processor_terminal": {
       "latency": 1
     },
-    "dim_pe": [4, 4],  // Size of process element array
+    "dim_pe": [8, 8],  // Size of process element array
     "num_srams": 4,
     "memory_terminal": {
       "latency": 1
     },
     "message_log": {
-      "file": "/dev/null"  // "data.mpf.gz"
+      "file": "ntrace.mpf"  // "data.mpf.gz"
     },
     "rate_log": {
       "file": "/dev/null"  // "rates.csv"

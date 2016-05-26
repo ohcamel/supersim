@@ -149,7 +149,7 @@ Application::~Application() {
 f64 Application::percentComplete() const {
   f64 percentSum = 0.0;
   u32 processorCount = 0;
-  for (u32 tid = numSrams_; tid < numTerminals(); tid++) {
+  for (u32 tid = numSrams_; tid < numSrams_ + numPEs_; tid++) {
     ProcessorTerminal* t =
         reinterpret_cast<ProcessorTerminal*>(getTerminal(tid2nid_[tid]));
     percentSum += t->percentComplete();

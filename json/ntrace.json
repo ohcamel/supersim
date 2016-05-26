@@ -88,7 +88,7 @@
     "max_injection_rate": -1,  // infinite injection rate
     "memory_slice": 2,
     "trace": {
-      "file": "trace/trace_vgg_partial_out_mem_partition_sorted"
+      "file": "trace/trace_vgg_partial_out_mem_partition"
     },
     "block_size": 2,  // bytes
     "bytes_per_flit": 8,
@@ -104,7 +104,7 @@
       "latency": 1
     },
     "message_log": {
-      "file": "ntrace.mpf"  // "data.mpf.gz"
+      "file": "/dev/null"  // "data.mpf.gz"
     },
     "rate_log": {
       "file": "/dev/null"  // "rates.csv"

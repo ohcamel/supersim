@@ -259,6 +259,10 @@ void Application::parseTraceFile() {
       initiator = srcId;
       op.target = destId;
       op.op = MemoryOp::eOp::kWriteReq;
+    } else if (fields[4] == "P") {
+      initiator = destId;
+      op.target = srcId;
+      op.op = MemoryOp::eOp::kPrefetchReq;
     } else {
       assert(false);
     }

@@ -24,7 +24,14 @@ namespace Ntrace {
 
 class MemoryOp {
  public:
-  enum class eOp {kReadReq, kReadResp, kWriteReq, kWriteResp};
+  enum class eOp {
+    kReadReq,
+    kReadResp,
+    kWriteReq,
+    kWriteResp,
+    kPrefetchReq,
+    kPrefetchResp
+  };
 
   MemoryOp(eOp _op, u32 _address);
   MemoryOp(eOp _op, u32 _address, u32 _blockSize);

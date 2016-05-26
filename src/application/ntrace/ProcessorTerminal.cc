@@ -73,12 +73,15 @@ void ProcessorTerminal::handleMessage(Message* _message) {
   assert(memOp != nullptr);
 
   if (memOp->op() == MemoryOp::eOp::kReadResp ||
-    memOp->op() == MemoryOp::eOp::kWriteResp) {
+    memOp->op() == MemoryOp::eOp::kWriteResp ||
+    memOp->op() == MemoryOp::eOp::kPrefetchResp) {
     // Received response
     // end the transaction
     endTransaction(_message->getTransaction());
 
-    if (memOp->op() != MemoryOp::eOp::kWriteResp) {
+    if (memOp->op() == MemoryOp::eOp::kPrefetchResp) {
+      // FIXME
+    } else if (memOp->op() != MemoryOp::eOp::kWriteResp) {
       waitingResps_--;
     }
 
@@ -154,7 +157,8 @@ void ProcessorTerminal::startNextMemoryAccess() {
     // get next request
     Application::TraceOp op = op_queue->front();
     assert(curTimestamp_ <= op.ts);
-    if (op.ts > curTimestamp_) break;
+    // prefetch is never blocking
+    if (op.op != MemoryOp::eOp::kPrefetchReq && op.ts > curTimestamp_) break;
 
     op_queue->pop_front();
     remainingAccesses_--;
@@ -200,7 +204,9 @@ void ProcessorTerminal::startNextMemoryAccess() {
     dbgprintf("sending %s request to %u",
         (op.op == MemoryOp::eOp::kWriteReq) ?
         "write" : "read", memoryTerminalId);
-    if (op.op != MemoryOp::eOp::kWriteReq) {
+    if (op.op == MemoryOp::eOp::kPrefetchReq) {
+      // FIXME
+    } else if (op.op != MemoryOp::eOp::kWriteReq) {
       waitingResps_++;
     }
     sendMessage(message, memoryTerminalId);
@@ -226,8 +232,16 @@ void ProcessorTerminal::sendMemoryResponse() {
   address &= ~(blockSize - 1);  // align to blockSize
 
   // create the response
-  MemoryOp::eOp respOp = reqOp == MemoryOp::eOp::kReadReq ?
-    MemoryOp::eOp::kReadResp : MemoryOp::eOp::kWriteResp;
+  MemoryOp::eOp respOp;
+  if (reqOp == MemoryOp::eOp::kReadReq) {
+    respOp = MemoryOp::eOp::kReadResp;
+  } else if (reqOp == MemoryOp::eOp::kWriteReq) {
+    respOp = MemoryOp::eOp::kWriteResp;
+  } else if (reqOp == MemoryOp::eOp::kPrefetchReq) {
+    respOp = MemoryOp::eOp::kPrefetchResp;
+  } else {
+    assert(false);
+  }
   MemoryOp* memOpResp = new MemoryOp(respOp, address,
     (reqOp == MemoryOp::eOp::kReadReq ?
       blockSize : 0));
@@ -266,8 +280,9 @@ void ProcessorTerminal::sendMemoryResponse() {
   // send the response to the requester
   u32 requesterId = request->getSourceId();
   dbgprintf("sending %s response to %u (address %u)",
-    (respOp == MemoryOp::eOp::kWriteResp) ?
-    "write" : "read", requesterId, address);
+      (respOp == MemoryOp::eOp::kPrefetchResp ? "prefetch" :
+       (respOp == MemoryOp::eOp::kWriteResp) ? "write" : "read"),
+      requesterId, address);
   sendMessage(response, requesterId);
 
   // delete the request

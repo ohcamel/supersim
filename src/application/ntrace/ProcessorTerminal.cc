@@ -171,7 +171,7 @@ void ProcessorTerminal::startNextMemoryAccess() {
     }
 
     // determine the proper memory terminal
-    u64 memoryTerminalId = app->tid2nid(op.target);
+    u32 memoryTerminalId = app->tid2nid(op.target);
 
     // determine message length
     u32 messageLength = headerOverhead + 1 + sizeof(u32) + blockSize;
@@ -202,8 +202,9 @@ void ProcessorTerminal::startNextMemoryAccess() {
 
     // send the request to the memory terminal
     dbgprintf("sending %s request to %u",
-        (op.op == MemoryOp::eOp::kWriteReq) ?
-        "write" : "read", memoryTerminalId);
+        (op.op == MemoryOp::eOp::kPrefetchReq ? "prefetch" :
+         (op.op == MemoryOp::eOp::kWriteReq) ? "write" : "read"),
+        memoryTerminalId);
     if (op.op == MemoryOp::eOp::kPrefetchReq) {
       // FIXME
     } else if (op.op != MemoryOp::eOp::kWriteReq) {

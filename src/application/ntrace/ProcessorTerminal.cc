@@ -80,7 +80,7 @@ void ProcessorTerminal::handleMessage(Message* _message) {
     endTransaction(_message->getTransaction());
 
     if (memOp->op() == MemoryOp::eOp::kPrefetchResp) {
-      // FIXME
+      outstandingPrefetch_--;
     } else if (memOp->op() != MemoryOp::eOp::kWriteResp) {
       waitingResps_--;
     }
@@ -88,7 +88,9 @@ void ProcessorTerminal::handleMessage(Message* _message) {
     delete memOp;
     delete _message;
 
-    if (waitingResps_ == 0) {
+    if (waitingResps_ == 0 &&
+        (curTimestamp_ < prefetchNeededTimestamp_
+         || outstandingPrefetch_ == 0)) {
       startProcessing();
     }
   } else {
@@ -151,14 +153,25 @@ void ProcessorTerminal::startNextMemoryAccess() {
   auto op_queue = app->getTraceQ(tid_ - app->numSrams());
   curTimestamp_ = op_queue->front().ts;
 
+  bool lastIsPrefetch = false;
+
   // generate memory requests
   while (!op_queue->empty()) {
 
     // get next request
     Application::TraceOp op = op_queue->front();
     assert(curTimestamp_ <= op.ts);
-    // prefetch is never blocking
-    if (op.op != MemoryOp::eOp::kPrefetchReq && op.ts > curTimestamp_) break;
+
+    if (op.ts > curTimestamp_) {
+      if (op.op == MemoryOp::eOp::kPrefetchReq) {
+        // Only issue back-to-back prefetches when there is outstanding prefetch
+        if (outstandingPrefetch_ != 0 && !lastIsPrefetch) {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
 
     op_queue->pop_front();
     remainingAccesses_--;
@@ -206,9 +219,15 @@ void ProcessorTerminal::startNextMemoryAccess() {
          (op.op == MemoryOp::eOp::kWriteReq) ? "write" : "read"),
         memoryTerminalId);
     if (op.op == MemoryOp::eOp::kPrefetchReq) {
-      // FIXME
+      lastIsPrefetch = true;
+      prefetchNeededTimestamp_ = std::min(prefetchNeededTimestamp_,
+          op.ts + app->prefetchDist());
+      outstandingPrefetch_++;
     } else if (op.op != MemoryOp::eOp::kWriteReq) {
       waitingResps_++;
+      lastIsPrefetch = false;
+    } else {
+      lastIsPrefetch = false;
     }
     sendMessage(message, memoryTerminalId);
   }

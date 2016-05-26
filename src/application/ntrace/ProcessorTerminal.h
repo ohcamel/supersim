@@ -70,6 +70,9 @@ class ProcessorTerminal : public Terminal {
 
   u64 curTimestamp_;
   u32 waitingResps_;
+
+  u32 outstandingPrefetch_;
+  u64 prefetchNeededTimestamp_;
 };
 
 }  // namespace Ntrace

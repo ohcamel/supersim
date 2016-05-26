@@ -305,8 +305,8 @@ u32 Application::traceNameToId(std::string name) {
     assert(col < numSrams_);
     return col;
   } else {
-    row = std::stoi(f1);
-    col = std::stoi(f2);
+    col = std::stoi(f1);
+    row = std::stoi(f2);
     assert(row < rowsPE_);
     assert(col < colsPE_);
     return row * colsPE_ + col + numSrams_;

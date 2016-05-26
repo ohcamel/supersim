@@ -91,7 +91,7 @@
       "file": "trace/trace_vgg_partial_out_mem_partition"
     },
     "block_size": 2,  // bytes
-    "bytes_per_flit": 8,
+    "bytes_per_flit": 1,
     "header_overhead": 2,  // bytes
     "max_packet_size": 16,  // flits
     "prefetch": {

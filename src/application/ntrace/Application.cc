@@ -44,6 +44,10 @@ Application::Application(const std::string& _name, const Component* _parent,
   headerOverhead_ = _settings["header_overhead"].asUInt();
   maxPacketSize_ = _settings["max_packet_size"].asUInt();
 
+  // prefetch
+  auto prefetchSettings = _settings["prefetch"];
+  prefetchDist_ = prefetchSettings["distance"].asUInt();
+
   // processor terminals
   auto dimPE = _settings["processor_terminal"]["dimension"];
   assert(dimPE.isArray());
@@ -262,7 +266,12 @@ void Application::parseTraceFile() {
     } else if (fields[4] == "P") {
       initiator = destId;
       op.target = srcId;
-      op.op = MemoryOp::eOp::kPrefetchReq;
+      if (prefetchDist_ != 0) {
+        op.op = MemoryOp::eOp::kPrefetchReq;
+        if (op.ts >= prefetchDist_) op.ts -= prefetchDist_;
+      } else {
+        op.op = MemoryOp::eOp::kReadReq;
+      }
     } else {
       assert(false);
     }
@@ -381,6 +390,10 @@ u32 Application::nid2tid(u32 nid) const {
   u32 ret = nid2tid_.at(nid);
   assert(ret < numPEs_ + numSrams_);
   return ret;
+}
+
+u64 Application::prefetchDist() const {
+  return prefetchDist_;
 }
 
 }  // namespace Ntrace

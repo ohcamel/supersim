@@ -94,6 +94,9 @@
     "bytes_per_flit": 8,
     "header_overhead": 4,  // bytes
     "max_packet_size": 16,  // flits
+    "prefetch": {
+      "distance": 16
+    },
     "processor_terminal": {
       "dimension": [8, 8],
       "sharing": [2, 2],

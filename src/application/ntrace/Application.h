@@ -68,6 +68,8 @@ class Application : public ::Application {
   u32 tid2nid(u32 tid) const;
   u32 nid2tid(u32 nid) const;
 
+  u64 prefetchDist() const;
+
  private:
   const u32 COL = 0;
   const u32 ROW = 1;
@@ -95,6 +97,8 @@ class Application : public ::Application {
   std::deque<TraceOp> * traceRequests_;
   std::vector<int> tid2nid_;
   std::unordered_map<u32, u32> nid2tid_;
+
+  u64 prefetchDist_;
 
   void parseTraceFile();
   u32 traceNameToId(std::string name);

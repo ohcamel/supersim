@@ -122,11 +122,11 @@ void MemoryTerminal::sendMemoryResponse() {
 
   // determine the message length
   //  perform memory operation
-  u32 messageLength = headerOverhead + 1 + sizeof(u32);
+  u32 messageLength = headerOverhead;
   if (reqOp == MemoryOp::eOp::kReadReq) {
     messageLength += blockSize;
   }
-  messageLength /= bytesPerFlit;
+  messageLength = (messageLength + bytesPerFlit - 1) / bytesPerFlit;
   u32 numPackets = messageLength / maxPacketSize;
   if ((messageLength % maxPacketSize) > 0) {
     numPackets++;

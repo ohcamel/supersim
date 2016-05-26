@@ -187,8 +187,8 @@ void ProcessorTerminal::startNextMemoryAccess() {
     u32 memoryTerminalId = app->tid2nid(op.target);
 
     // determine message length
-    u32 messageLength = headerOverhead + 1 + sizeof(u32) + blockSize;
-    messageLength /= bytesPerFlit;
+    u32 messageLength = headerOverhead + blockSize;
+    messageLength = (messageLength + bytesPerFlit - 1) / bytesPerFlit;
     u32 numPackets = messageLength / maxPacketSize;
     if ((messageLength % maxPacketSize) > 0) {
       numPackets++;
@@ -268,11 +268,11 @@ void ProcessorTerminal::sendMemoryResponse() {
 
   // determine the message length
   //  perform memory operation
-  u32 messageLength = headerOverhead + 1 + sizeof(u32);
+  u32 messageLength = headerOverhead;
   if (reqOp == MemoryOp::eOp::kReadReq) {
     messageLength += blockSize;
   }
-  messageLength /= bytesPerFlit;
+  messageLength = (messageLength + bytesPerFlit - 1) / bytesPerFlit;
   u32 numPackets = messageLength / maxPacketSize;
   if ((messageLength % maxPacketSize) > 0) {
     numPackets++;

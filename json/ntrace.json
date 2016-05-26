@@ -92,7 +92,7 @@
     },
     "block_size": 2,  // bytes
     "bytes_per_flit": 8,
-    "header_overhead": 4,  // bytes
+    "header_overhead": 2,  // bytes
     "max_packet_size": 16,  // flits
     "prefetch": {
       "distance": 4

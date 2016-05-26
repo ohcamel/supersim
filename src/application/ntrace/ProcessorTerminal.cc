@@ -77,7 +77,10 @@ void ProcessorTerminal::handleMessage(Message* _message) {
     // Received response
     // end the transaction
     endTransaction(_message->getTransaction());
-    waitingResps_--;
+
+    if (memOp->op() != MemoryOp::eOp::kWriteResp) {
+      waitingResps_--;
+    }
 
     delete memOp;
     delete _message;
@@ -197,7 +200,9 @@ void ProcessorTerminal::startNextMemoryAccess() {
     dbgprintf("sending %s request to %u",
         (op.op == MemoryOp::eOp::kWriteReq) ?
         "write" : "read", memoryTerminalId);
-    waitingResps_++;
+    if (op.op != MemoryOp::eOp::kWriteReq) {
+      waitingResps_++;
+    }
     sendMessage(message, memoryTerminalId);
   }
 }
